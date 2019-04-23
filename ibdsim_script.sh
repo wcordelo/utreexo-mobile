@@ -1,0 +1,93 @@
+#!/bin/bash
+
+set -e
+
+VERSION="1.12.4"
+
+
+
+print_options() {
+	echo "if go is installed ignore OPTIONS: --yes if need txo history"
+	echo "OPTIONS:"
+	echo -e "  --linux install linux version"
+	echo -e "  --win install windows version"
+	echo -e "  --mac install macOS version"
+}
+
+if [ "$1" == "--help" ]; then 
+	print_options
+	exit 0
+fi
+
+run_ibdsim() {
+	go get "github.com/mit-dci/utreexo/cmd/ibdsim"
+    cd "$HOME/go/src/github.com/mit-dci/utreexo/cmd/ibdsim"
+    go build
+    ./ibdsim --ttlfn=$HOME/ttl.testnet3.txos --genproofs=true --genhist=true
+    exit 0    
+}
+
+if [ -d "$HOME/.go" ] || [ -d "$HOME/go" ]; then
+    echo "The 'go' or '.go' directories already exist."
+    
+    if [ "$1" == "--yes" ]; then 
+    	echo "downloading txo history... in $HOME"
+
+    	wget   -P "$HOME"
+
+    fi  
+    
+    run_ibdsim
+fi
+
+if [ "$1" == "--linux" ]; then 
+	GOFILE="go$VERSION.linux-amd64.tar.gz"
+elif [ "$1" == "--win" ]; then 
+        GOFILE="go$VERSION.windows-amd64.msi"
+elif [ "$1" == "--mac" ]; then 
+        GOFILE="go$VERSION.darwin-amd64.pkg"
+else 
+	print_options
+	exit 1
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Download failed! Exiting."
+    exit 1
+fi
+
+echo "Downloading $GOFILE ..."
+if [ "$1" == "--linux" ]; then
+        wget https://golang.org/dl/$GOFILE -O /tmp/go.tar.gz
+elif [ "$1" == "--win" ]; then
+        wget https://golang.org/dl/$GOFILE -O /tmp/go.msi
+elif [ "$1" == "--mac" ]; then
+        wget https://golang.org/dl/$GOFILE -O /tmp/go.pkg
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Download failed"
+    exit 1
+fi
+
+echo "Extracting File..."
+
+if [ "$1" == "--linux" ]; then
+	tar -C "$HOME" -xzf /tmp/go.tar.gz
+	mv "$HOME/go" "$HOME/.go"
+	touch "$HOME/.${shell_profile}"
+elif [ "$1" == "--win" ]; then
+	msiexec /a "$HOME" /qb "TARGETDIR=C:\tmp\go.msi"
+	mv "$HOME/go" "$HOME/.go"
+        touch "$HOME/.${shell_profile}"
+elif [ "$1" == "--mac" ]; then
+	xar -C "$HOME" -xzf /tmp/go.tar.gz
+        mv "$HOME/go" "$HOME/.go"
+        touch "$HOME/.${shell_profile}"
+fi
+
+mkdir -p $HOME/go/{src,pkg,bin}
+echo -e "\nGo $VERSION was installed.\n relogin shell environment and run the script w/o setup environment"
+rm -f /tmp/go.tar.gz
+rm -f /tmp/go.msi
+rm -f /tmp/go.pkg
