@@ -52,7 +52,7 @@ else
 fi
 
 if [ $? -ne 0 ]; then
-    echo "Download failed! Exiting."
+    echo "Download failed"
     exit 1
 fi
 
