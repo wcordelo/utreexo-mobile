@@ -7,7 +7,8 @@ VERSION="1.12.4"
 
 
 print_options() {
-	echo "if go is installed ignore OPTIONS: --yes if need txo history"
+	echo "--genproofs or --genhist"
+	echo "if go is installed ignore OPTIONS: --yes if need to download testnet txo history"
 	echo "OPTIONS:"
 	echo -e "  --linux install linux version"
 	echo -e "  --win install windows version"
@@ -19,18 +20,26 @@ if [ "$1" == "--help" ]; then
 	exit 0
 fi
 
+VAR=$1
+
 run_ibdsim() {
-	go get "github.com/mit-dci/utreexo/cmd/ibdsim"
+    go get "github.com/mit-dci/utreexo/cmd/ibdsim"
     cd "$HOME/go/src/github.com/mit-dci/utreexo/cmd/ibdsim"
     go build
-    ./ibdsim --ttlfn=$HOME/ttl.testnet3.txos --genproofs=true --genhist=true
+    if [ "$VAR" == "--genproofs" ]; then
+	echo "hi"
+    	./ibdsim --ttlfn=$HOME/ttl.testnet3.txos --genproofs=true
+    fi
+    if [ "$VAR" == "--genhist" ]; then
+    	./ibdsim --ttlfn=$HOME/ttl.testnet3.txos --genhist=true
+    fi
     exit 0    
 }
 
 if [ -d "$HOME/.go" ] || [ -d "$HOME/go" ]; then
     echo "The 'go' or '.go' directories already exist."
     
-    if [ "$1" == "--yes" ]; then 
+    if [ "$2" == "--yes" ]; then 
     	echo "downloading txo history... in $HOME"
 
     	wget   -P "$HOME"
@@ -40,11 +49,11 @@ if [ -d "$HOME/.go" ] || [ -d "$HOME/go" ]; then
     run_ibdsim
 fi
 
-if [ "$1" == "--linux" ]; then 
+if [ "$2" == "--linux" ]; then 
 	GOFILE="go$VERSION.linux-amd64.tar.gz"
-elif [ "$1" == "--win" ]; then 
+elif [ "$2" == "--win" ]; then 
         GOFILE="go$VERSION.windows-amd64.msi"
-elif [ "$1" == "--mac" ]; then 
+elif [ "$2" == "--mac" ]; then 
         GOFILE="go$VERSION.darwin-amd64.pkg"
 else 
 	print_options
@@ -57,11 +66,11 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Downloading $GOFILE ..."
-if [ "$1" == "--linux" ]; then
+if [ "$2" == "--linux" ]; then
         wget https://golang.org/dl/$GOFILE -O /tmp/go.tar.gz
-elif [ "$1" == "--win" ]; then
+elif [ "$2" == "--win" ]; then
         wget https://golang.org/dl/$GOFILE -O /tmp/go.msi
-elif [ "$1" == "--mac" ]; then
+elif [ "$2" == "--mac" ]; then
         wget https://golang.org/dl/$GOFILE -O /tmp/go.pkg
 fi
 
@@ -72,15 +81,15 @@ fi
 
 echo "Extracting File..."
 
-if [ "$1" == "--linux" ]; then
+if [ "$2" == "--linux" ]; then
 	tar -C "$HOME" -xzf /tmp/go.tar.gz
 	mv "$HOME/go" "$HOME/.go"
 	touch "$HOME/.${shell_profile}"
-elif [ "$1" == "--win" ]; then
+elif [ "$2" == "--win" ]; then
 	msiexec /a "$HOME" /qb "TARGETDIR=C:\tmp\go.msi"
 	mv "$HOME/go" "$HOME/.go"
         touch "$HOME/.${shell_profile}"
-elif [ "$1" == "--mac" ]; then
+elif [ "$2" == "--mac" ]; then
 	xar -C "$HOME" -xzf /tmp/go.tar.gz
         mv "$HOME/go" "$HOME/.go"
         touch "$HOME/.${shell_profile}"
